@@ -1,1 +1,59 @@
+====================================================================
+              VR CRICKET — BAT TRACKING CIRCUIT (MPU6050 + NANO)
+====================================================================
+
+                     +-------------------------+
+                     |     Arduino Nano        |
+                     |                         |
+                     |   3.3V ----+------------+----> MPU6050 VCC
+                     |            |     
+                     |   GND ------+----------------> MPU6050 GND
+                     |                         
+                     |   A5  -----------------------> MPU6050 SCL
+                     |   A4  -----------------------> MPU6050 SDA
+                     |
+                     |   D10 -----------------------> HC-05 TXD  (optional)
+                     |   D11 -----------------------> HC-05 RXD  (optional)
+                     |                         |
+                     +-------------------------+
+
+
+                     +-------------------------+
+                     |       MPU6050 IMU       |
+                     |-------------------------|
+                     |   VCC  -----------------> Arduino 3.3V
+                     |   GND  -----------------> Arduino GND
+                     |   SCL  -----------------> A5
+                     |   SDA  -----------------> A4
+                     |   INT  ---- (not used) 
+                     +-------------------------+
+
+
+                     +-------------------------+
+                     |     HC-05 Bluetooth     |   (Optional but recommended)
+                     |-------------------------|
+                     |   VCC  -----------------> Arduino 5V
+                     |   GND  -----------------> Arduino GND
+                     |   TXD  -----------------> Arduino D10 (SoftwareSerial RX)
+                     |   RXD  -----------------> Arduino D11 (SoftwareSerial TX)
+                     |   KEY  ---(not required)
+                     +-------------------------+
+
+
+====================================================================
+                          CONNECTION NOTES
+====================================================================
+
+1. MPU6050 must be powered at **3.3V**, not 5V.
+2. Arduino Nano I2C pins:
+       SDA = A4
+       SCL = A5
+3. Bluetooth module is optional:
+       If not using wireless:
+          → Remove HC-05 entirely
+          → Use USB serial for Unity communication
+4. Ensure **Arduino GND** is shared with **all components**.
+5. Keep MPU6050 stable and firmly attached to the cricket bat
+   to avoid vibration errors in readings.
+====================================================================
 
