@@ -45,6 +45,3 @@ This project blends **VR interaction**, **sensor fusion**, **physics-based batti
 - VR floating scoreboard using TextMeshPro
 
 ---
-
-# 🧩 System Architecture
-
