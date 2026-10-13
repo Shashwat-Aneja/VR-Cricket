@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO.Ports;
 using UnityEngine;
 
@@ -45,16 +46,16 @@ public class BatRotationReceiver : MonoBehaviour
 
     void ProcessData(string data)
     {
-        // Expected format: YPR, yaw, pitch, roll
-        if (!data.StartsWith("YPR")) return;
+        // Expected format: YPR, yaw, pitch, roll. Serial values use decimal points.
+        if (string.IsNullOrWhiteSpace(data) || batModel == null || !data.StartsWith("YPR")) return;
 
         string[] parts = data.Split(',');
 
         if (parts.Length < 4) return;
 
-        if (float.TryParse(parts[1], out float yaw) &&
-            float.TryParse(parts[2], out float pitch) &&
-            float.TryParse(parts[3], out float roll))
+        if (float.TryParse(parts[1].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out float yaw) &&
+            float.TryParse(parts[2].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out float pitch) &&
+            float.TryParse(parts[3].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out float roll))
         {
             // Apply rotation to bat
             batModel.localRotation = Quaternion.Euler(pitch, yaw, roll);
