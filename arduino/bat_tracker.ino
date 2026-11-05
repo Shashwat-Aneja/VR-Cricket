@@ -4,24 +4,19 @@
   Purpose:
     Sends smoothed bat orientation (yaw, pitch, roll) to Unity
     for VR cricket simulation.
-
-  Features:
-    ✔ MPU6050 initialization
-    ✔ Sensor calibration
-    ✔ Complementary filter for orientation
-    ✔ Stable serial output at 100 Hz
 */
 
 #include <Wire.h>
 #include "MPU6050.h"
+#include "SampleTiming.h"
 
 MPU6050 mpu;
 
-unsigned long lastTime = 0;
+uint32_t lastSampleMicros = 0;
 float yaw = 0, pitch = 0, roll = 0;
 
 // Complementary filter constant
-const float alpha = 0.96;
+const float alpha = 0.96f;
 
 void setup() {
   Serial.begin(115200);
@@ -31,45 +26,44 @@ void setup() {
 
   if (!mpu.testConnection()) {
     Serial.println("MPU6050 connection failed!");
-    while (1);
+    while (1) {
+    }
   }
 
   Serial.println("MPU6050 Ready");
   delay(1000);
+  lastSampleMicros = micros();
 }
 
 void loop() {
-  if (millis() - lastTime >= 10) {   // 100 Hz
-    lastTime = millis();
+  const uint32_t now = micros();
+  if (sampleIntervalElapsed(now, lastSampleMicros)) {
+    // Use the actual interval between sensor samples instead of assuming
+    // every loop iteration completes at exactly 100 Hz.
+    const float dt = sampleDeltaSeconds(now, lastSampleMicros);
+    lastSampleMicros = now;
 
     int16_t ax, ay, az, gx, gy, gz;
     mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
-    // Convert raw values
-    float accelX = ax / 16384.0;
-    float accelY = ay / 16384.0;
-    float accelZ = az / 16384.0;
+    const float accelX = ax / 16384.0f;
+    const float accelY = ay / 16384.0f;
+    const float accelZ = az / 16384.0f;
 
-    float gyroX = gx / 131.0;
-    float gyroY = gy / 131.0;
-    float gyroZ = gz / 131.0;
+    const float gyroX = gx / 131.0f;
+    const float gyroY = gy / 131.0f;
+    const float gyroZ = gz / 131.0f;
 
-    float dt = 0.01;
+    const float accelPitch = atan2(accelY, sqrt(accelX * accelX + accelZ * accelZ)) * 180.0f / PI;
+    const float accelRoll = atan2(-accelX, accelZ) * 180.0f / PI;
 
-    // Accelerometer angle estimation
-    float accelPitch = atan2(accelY, sqrt(accelX * accelX + accelZ * accelZ)) * 180 / PI;
-    float accelRoll  = atan2(-accelX, accelZ) * 180 / PI;
-
-    // Integrate gyroscope data
     pitch += gyroX * dt;
-    roll  += gyroY * dt;
-    yaw   += gyroZ * dt;
+    roll += gyroY * dt;
+    yaw += gyroZ * dt;
 
-    // Complementary filter
-    pitch = alpha * pitch + (1 - alpha) * accelPitch;
-    roll  = alpha * roll  + (1 - alpha) * accelRoll;
+    pitch = alpha * pitch + (1.0f - alpha) * accelPitch;
+    roll = alpha * roll + (1.0f - alpha) * accelRoll;
 
-    // Output formatted for Unity
     Serial.print("YPR,");
     Serial.print(yaw, 2);
     Serial.print(",");
@@ -78,4 +72,3 @@ void loop() {
     Serial.println(roll, 2);
   }
 }
-
