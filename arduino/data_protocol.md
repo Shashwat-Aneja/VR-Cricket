@@ -9,6 +9,12 @@ This document describes the frame emitted by `arduino/bat_tracker.ino` and the p
 - Transport: USB serial or a compatible serial bridge
 - Encoding: ASCII text, one newline-terminated frame per sample
 
+## Startup calibration
+
+After the MPU6050 connection check, the firmware collects 200 gyroscope samples over approximately one second. Keep the bat stationary during this interval. The average raw X/Y/Z gyro readings are treated as zero-rate offsets and subtracted before angular velocity is integrated.
+
+This reduces stationary yaw, pitch, and roll drift caused by sensor bias. It does not establish an absolute heading, so yaw can still drift over longer sessions. Re-run the startup calibration after changing the sensor mounting or temperature significantly.
+
 ## Frame format
 
 A valid orientation frame contains four comma-separated fields:
@@ -25,7 +31,7 @@ YPR,12.50,-3.25,8.00
 
 The firmware prints each angle to two decimal places. Values represent degrees. Yaw is gyro-integrated and may drift over time; it is not an absolute heading reference.
 
-The firmware also emits a startup status line (`MPU6050 Ready`) before orientation frames. A receiver must ignore non-frame status lines.
+The firmware also emits startup status lines before orientation frames. A receiver must ignore non-frame status lines.
 
 ## Receiver validation
 
@@ -52,8 +58,9 @@ Do not parse using the current machine's locale. A decimal comma would conflict 
 ## Hardware bring-up
 
 1. Confirm the MPU6050 connection succeeds at startup.
-2. Open the serial monitor at 115200 baud and verify `YPR,` lines arrive steadily.
-3. Move the sensor slowly around each axis and confirm the corresponding output changes.
-4. Confirm the Unity parser ignores `MPU6050 Ready` and accepts only complete finite frames.
+2. Keep the bat still until the firmware prints `Gyroscope calibration complete`.
+3. Open the serial monitor at 115200 baud and verify `YPR,` lines arrive steadily.
+4. Move the sensor slowly around each axis and confirm the corresponding output changes.
+5. Confirm the Unity parser ignores startup status lines and accepts only complete finite frames.
 
 Test the serial stream with the bat disconnected from active gameplay before tuning swing detection.

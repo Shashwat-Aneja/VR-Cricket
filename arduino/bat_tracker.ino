@@ -9,11 +9,14 @@
 #include <Wire.h>
 #include "MPU6050.h"
 #include "SampleTiming.h"
+#include "GyroCalibration.h"
 
 MPU6050 mpu;
+GyroBiasCalibrator gyroCalibrator;
 
 uint32_t lastSampleMicros = 0;
 float yaw = 0, pitch = 0, roll = 0;
+float gyroBiasXRaw = 0, gyroBiasYRaw = 0, gyroBiasZRaw = 0;
 
 // Complementary filter constant
 const float alpha = 0.96f;
@@ -30,8 +33,20 @@ void setup() {
     }
   }
 
+  Serial.println("Keep the bat still: calibrating gyroscope...");
+  for (uint16_t sample = 0; sample < GyroBiasCalibrator::REQUIRED_SAMPLES; ++sample) {
+    int16_t ax, ay, az, gx, gy, gz;
+    mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+    gyroCalibrator.addSample(gx, gy, gz);
+    delay(5);
+  }
+
+  gyroBiasXRaw = gyroCalibrator.biasXRaw();
+  gyroBiasYRaw = gyroCalibrator.biasYRaw();
+  gyroBiasZRaw = gyroCalibrator.biasZRaw();
+  Serial.println("Gyroscope calibration complete");
+
   Serial.println("MPU6050 Ready");
-  delay(1000);
   lastSampleMicros = micros();
 }
 
@@ -50,9 +65,9 @@ void loop() {
     const float accelY = ay / 16384.0f;
     const float accelZ = az / 16384.0f;
 
-    const float gyroX = gx / 131.0f;
-    const float gyroY = gy / 131.0f;
-    const float gyroZ = gz / 131.0f;
+    const float gyroX = (static_cast<float>(gx) - gyroBiasXRaw) / 131.0f;
+    const float gyroY = (static_cast<float>(gy) - gyroBiasYRaw) / 131.0f;
+    const float gyroZ = (static_cast<float>(gz) - gyroBiasZRaw) / 131.0f;
 
     const float accelPitch = atan2(accelY, sqrt(accelX * accelX + accelZ * accelZ)) * 180.0f / PI;
     const float accelRoll = atan2(-accelX, accelZ) * 180.0f / PI;
